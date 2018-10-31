@@ -68,8 +68,6 @@ task VSCode {
 }
 
 task PowerShellModules {
-    Set-PSRepository PSGallery -InstallationPolicy Trusted
-
     foreach ($m in $script:PowerShellModules)
     {
         Install-Module @m -Scope CurrentUser
