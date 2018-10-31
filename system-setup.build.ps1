@@ -1,3 +1,5 @@
+$ErrorActionPreference = 'Stop'
+
 # PowerShell modules to install
 $script:PowerShellModules = @(
     @{ Name = 'posh-git'; AllowPrerelease = $true }
@@ -19,7 +21,7 @@ task Vim -After Homebrew {
 
     if ($IsLinux)
     {
-        sudo apt -y install vim-gtk3
+        apt -y install vim-gtk3
     }
     elseif ($IsMacOS)
     {
@@ -42,16 +44,16 @@ task Dotnet {
     if ($IsLinux)
     {
         wget -q 'https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb'
-        sudo dpkg -i packages-microsoft-prod.deb
-        sudo apt-get -y install apt-transport-https
-        sudo apt-get -y update
-        sudo apt-get -y install dotnet-sdk-2.1
+        dpkg -i packages-microsoft-prod.deb
+        apt-get -y install apt-transport-https
+        apt-get -y update
+        apt-get -y install dotnet-sdk-2.1
     }
     elseif ($IsMacOS)
     {
         $dotNetInstallerPath = Join-Path $script:tmpdir 'dotnetInstaller.pkg'
         Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/38102737-cb48-46c2-8f52-fb7102b50ae7/d81958d71c3c2679796e1ecfbd9cc903/dotnet-sdk-2.1.403-osx-x64.pkg' -OutFile $dotNetInstallerPath
-        sudo installer -pkg $dotNetInstallerPath -target /
+        installer -pkg $dotNetInstallerPath -target /
     }
     else
     {
@@ -81,7 +83,7 @@ task Telegram {
         Invoke-WebRequest -Uri 'https://telegram.org/dl/desktop/linux' -OutFile $telegramDl
         Push-Location $script:tmpdir
         tar xvf $telegramDl
-        sudo mv ./Telegram /opt/
+        mv ./Telegram /opt/
         Pop-Location
     }
 }

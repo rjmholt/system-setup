@@ -1,3 +1,11 @@
+set -e
+
+# Install curl if it does not exist
+if which curl > /dev/null
+then
+    apt install curl
+fi
+
 # Install PowerShell Core
 bash <(curl -s https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
 
