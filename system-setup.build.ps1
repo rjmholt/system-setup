@@ -11,6 +11,17 @@ class GitHubRepo
     [string]$Upstream
 }
 
+function Write-Section
+{
+    param(
+        [Parameter()]
+        [string]
+        $Info
+    )
+
+    Write-Host "`n`n--- $Info ---`n" -ForegroundColor Yellow
+}
+
 function Restore-GitHubRepos
 {
     param(
@@ -59,12 +70,16 @@ function Restore-GitHubRepos
 }
 
 task Homebrew -If { $IsMacOS } {
+    Write-Section 'Installing Homebrew'
+
     $homebrewInstallPath = Join-Path $script:tmpdir 'install-homebrew.rb'
     Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Homebrew/install/master/install' -OutFile $homebrewInstallPath
     /usr/bin/ruby $homebrewInstallPath
 }
 
 task Vim Homebrew, {
+    Write-Section 'Installing vim'
+
     $vimrcLocation = if ($IsWindows) { '~/_vimrc' } else { '~/.vimrc' }
     $vimFolder = if ($IsWindows) { '~/vimfiles' } else { '~/.vim' }
 
@@ -92,6 +107,8 @@ task Vim Homebrew, {
 }
 
 task Dotnet {
+    Write-Section 'Installing dotnet'
+
     if ($IsLinux)
     {
         wget -q 'https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb'
@@ -115,6 +132,8 @@ task Dotnet {
 }
 
 task VSCode {
+    Write-Section 'Installing VSCode'
+
     $extensions = @(
         'DavidAnson.vscode-markdownlint'
         'eamodio.gitlens'
@@ -142,6 +161,8 @@ task VSCode {
 }
 
 task PowerShellModules {
+    Write-Section 'Installing PowerShell modules'
+
     # PowerShell modules to install
     $powerShellModules = @(
         @{ Name = 'posh-git'; AllowPrerelease = $true }
@@ -154,6 +175,8 @@ task PowerShellModules {
 }
 
 task PowerShellProfile {
+    Write-Section 'Installing PowerShell profile'
+
     $profileSrcPath = Join-Path $PSScriptRoot 'profile.ps1'
 
     $profileDir = Split-Path $PROFILE
@@ -167,6 +190,8 @@ task PowerShellProfile {
 }
 
 task Telegram {
+    Write-Section 'Installing Telegram'
+
     if ($IsLinux)
     {
         $telegramDl = Join-Path $script:tmpdir 'telegram.tar.xz'
@@ -182,6 +207,8 @@ task Telegram {
 }
 
 task Spotify {
+    Write-Section 'Installing Spotify'
+
     if ($IsLinux)
     {
         apt-key -y adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-keys '931FF8E79F0876134EDDBDCCA87FF9DF48BF1C90'
@@ -195,6 +222,8 @@ task Spotify {
 }
 
 task Firefox {
+    Write-Section 'Installing Firefox'
+
     if ($IsLinux)
     {
         apt install -y firefox
@@ -205,6 +234,8 @@ task Firefox {
 }
 
 task Chrome {
+    Write-Section 'Installing Chrome'
+
     if ($IsLinux)
     {
         $debFilePath = Join-Path $script:tmpdir 'chrome.deb'
@@ -216,6 +247,8 @@ task Chrome {
 }
 
 task GitHubRepos {
+    Write-Section 'Setting up GitHub repos'
+
     if ($IsWindows)
     {
         $myGH = "https://github.com/rjmholt/{0}"
@@ -271,6 +304,8 @@ task GitHubRepos {
 }
 
 task LinuxPackages -If { $IsLinux } {
+    Write-Section 'Installing other packages'
+
     $packages = @(
         'build-essential'
         'python3'
@@ -286,15 +321,18 @@ task LinuxPackages -If { $IsLinux } {
 }
 
 task Rust -If { $IsLinux } {
-    sudo -H -u $env:SUDO_USER bash -c 'curl https://sh.rustup.rs -sSf | sh'
+    Write-Section 'Installing Rust'
+
+    sudo -H -u $env:SUDO_USER bash -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
 }
 
 task RememberToInstall -If { $script:RememberToInstall } {
-    Write-Host "`n`nRemember to install the following programs:`n"
+    Write-Host "`n`nRemember to install the following programs:"
     foreach ($p in $script:RememberToInstall)
     {
         Write-Host "`t- $p"
     }
+    Write-Host "`n"
 }
 
 task . PowerShellModules,PowerShellProfile,Dotnet,Rust,VSCode,Vim,Firefox,Chrome,Telegram,Spotify,RememberToInstall

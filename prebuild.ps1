@@ -1,5 +1,16 @@
 $script:tmpdir = [System.IO.Path]::GetTempPath()
 
+function Write-Section
+{
+    param(
+        [Parameter()]
+        [string]
+        $Info
+    )
+
+    Write-Host "`n`n--- $Info ---`n" -ForegroundColor Yellow
+}
+
 function Update-Path
 {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
@@ -7,12 +18,16 @@ function Update-Path
 
 function Install-InvokeBuild
 {
+    Write-Section "Installing InvokeBuild"
+
     Set-PSRepository PSGallery -InstallationPolicy Trusted
     Install-Module -Scope CurrentUser InvokeBuild
 }
 
 function Install-Git
 {
+    Write-Section "Installing git"
+
     if ($IsLinux)
     {
         apt install -y git
@@ -36,6 +51,8 @@ function Install-Git
 
 function Restore-SetupRepo
 {
+    Write-Section "Cloning setup repo"
+
     $setupPath = Join-Path $script:tmpdir 'setup-system'
     git clone 'https://github.com/rjmholt/system-setup' $setupPath > $null
     return $setupPath
@@ -54,6 +71,7 @@ $setupPath = Restore-SetupRepo
 Push-Location $setupPath
 try
 {
+    Write-Section "Running main build"
     Invoke-Build
 }
 finally

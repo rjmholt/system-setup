@@ -1,9 +1,20 @@
 set -e
 
 # Install curl if it does not exist
-if which curl > /dev/null
+if ! [ -x "$(command -v curl)" ]
 then
-    apt install curl
+    apt install -y curl
+fi
+
+if ! [ -x "$(command -v ssh)" ]
+then
+    apt install -y ssh
+fi
+
+if ! [ -e ~/.ssh/id_*.pub ]
+then
+    echo "You need to set up your ssh key and run this script again" > &2
+    exit 1
 fi
 
 # Install PowerShell Core
