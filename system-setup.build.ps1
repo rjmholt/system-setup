@@ -64,7 +64,7 @@ task Homebrew -If { $IsMacOS } {
     /usr/bin/ruby $homebrewInstallPath
 }
 
-task Vim ,Homebrew {
+task Vim Homebrew, {
     $vimrcLocation = if ($IsWindows) { '~/_vimrc' } else { '~/.vimrc' }
     $vimFolder = if ($IsWindows) { '~/vimfiles' } else { '~/.vim' }
 
