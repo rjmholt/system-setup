@@ -1,13 +1,62 @@
 $ErrorActionPreference = 'Stop'
 
-# PowerShell modules to install
-$script:PowerShellModules = @(
-    @{ Name = 'posh-git'; AllowPrerelease = $true }
-)
-
 $script:tmpdir = [System.IO.Path]::GetTempPath()
 
-$script:VimrcPath = Join-Path $PSScriptRoot 'vimrc.vim'
+$script:RememberToInstall = @()
+
+class GitHubRepo
+{
+    [string]$Name
+    [string]$Origin
+    [string]$Upstream
+}
+
+function Restore-GitHubRepos
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [object]
+        $Item,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $BaseDir
+    )
+
+    if (-not $Item)
+    {
+        return
+    }
+
+    if ($Item -is [GitHubRepo])
+    {
+        $repoPath = Join-Path $BaseDir $Item.Name
+        git clone --recursive $Item.Origin
+        Push-Location $repoPath
+        try
+        {
+            if ($Item.Upstream)
+            {
+                git remote add upstream $Item.Upstream
+            }
+            git fetch --all
+        }
+        finally
+        {
+            Pop-Location
+        }
+        return
+    }
+
+    if ($Item -is [hashtable])
+    {
+        foreach ($dir in $Item.get_Keys())
+        {
+            $dirPath = Join-Path $BaseDir $dir
+            Restore-GitHubRepos -Item $Item[$dir] -BaseDir $dirPath
+        }
+    }
+}
 
 task Homebrew -If { $IsMacOS } {
     $homebrewInstallPath = Join-Path $script:tmpdir 'install-homebrew.rb'
@@ -15,9 +64,11 @@ task Homebrew -If { $IsMacOS } {
     /usr/bin/ruby $homebrewInstallPath
 }
 
-task Vim -After Homebrew {
+task Vim ,Homebrew {
     $vimrcLocation = if ($IsWindows) { '~/_vimrc' } else { '~/.vimrc' }
     $vimFolder = if ($IsWindows) { '~/vimfiles' } else { '~/.vim' }
+
+    $vimrcSrcPath = Join-Path $PSScriptRoot 'vimrc.vim'
 
     if ($IsLinux)
     {
@@ -25,7 +76,7 @@ task Vim -After Homebrew {
     }
     elseif ($IsMacOS)
     {
-        brew install vim --with-override-system-vi --with-python3
+        sudo -H -u $env:SUDO_USER brew install vim --with-override-system-vi --with-python3
     }
     else
     {
@@ -34,7 +85,7 @@ task Vim -After Homebrew {
         & $vimExePath /S
     }
 
-    Copy-Item -Path $script:VimrcPath -Destination $vimrcLocation -Force
+    Copy-Item -Path $vimrcSrcPath -Destination $vimrcLocation -Force
     New-Item -Path "$vimFolder/plugged" -ItemType Directory
     New-Item -Path "$vimFolder/autoload" -ItemType Directory
     Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim' -OutFile "$vimFolder/autoload/plug.vim"
@@ -45,9 +96,9 @@ task Dotnet {
     {
         wget -q 'https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb'
         dpkg -i packages-microsoft-prod.deb
-        apt-get -y install apt-transport-https
-        apt-get -y update
-        apt-get -y install dotnet-sdk-2.1
+        apt install -y apt-transport-https
+        apt update -y
+        apt install -y dotnet-sdk-2.1
     }
     elseif ($IsMacOS)
     {
@@ -64,16 +115,55 @@ task Dotnet {
 }
 
 task VSCode {
+    $extensions = @(
+        'DavidAnson.vscode-markdownlint'
+        'eamodio.gitlens'
+        'EditorConfig.EditorConfig'
+        'eg2.tslint'
+        'jchannon.csharpextensions'
+        'k--kato.docomment'
+        'ms-vscode.azure-account'
+        'ms-vscode.csharp'
+        'vscodevim.vim'
+    )
+
+    if (-not $IsWindows)
+    {
+        $extensions += @(
+            'justusadam.language-haskell'
+            'alanz.vscode-hie-server'
+            'rust-lang.rust'
+        )
+    }
+
     $installVSCodePath = Join-Path $script:tmpdir 'Install-VSCode.ps1'
-    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/vscode-powershell/master/scripts/Install-VSCode.ps1' -OutFile $installVSCodePath
-    & $installVSCodePath -BuildEdition 'Insider-System'
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/vscode-powershell/72191280b19a40fdf0f6a8addb25099ae4ced552/scripts/Install-VSCode.ps1' -OutFile $installVSCodePath
+    & $installVSCodePath -BuildEdition 'Insider-System' -AdditionalExtensions $extensions
 }
 
 task PowerShellModules {
-    foreach ($m in $script:PowerShellModules)
+    # PowerShell modules to install
+    $powerShellModules = @(
+        @{ Name = 'posh-git'; AllowPrerelease = $true }
+    )
+
+    foreach ($m in $powerShellModules)
     {
         Install-Module @m -Scope CurrentUser
     }
+}
+
+task PowerShellProfile {
+    $profileSrcPath = Join-Path $PSScriptRoot 'profile.ps1'
+
+    $profileDir = Split-Path $PROFILE
+
+    if (-not (Test-Path $profileDir))
+    {
+        New-Item -ItemType Directory $profileDir
+    }
+
+    Copy-Item -LiteralPath $profileSrcPath -Destination $PROFILE -Force
 }
 
 task Telegram {
@@ -85,7 +175,126 @@ task Telegram {
         tar xvf $telegramDl
         mv ./Telegram /opt/
         Pop-Location
+        return
+    }
+
+    $script:RememberToInstall += 'Telegram'
+}
+
+task Spotify {
+    if ($IsLinux)
+    {
+        apt-key -y adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-keys '931FF8E79F0876134EDDBDCCA87FF9DF48BF1C90'
+        'deb http://repository.spotify.com stable non-free' > /etc/apt/sources.list.d/spotify.list
+        apt update -y
+        apt install -y spotify-client
+        return
+    }
+
+    $script:RememberToInstall += 'Spotify'
+}
+
+task Firefox {
+    if ($IsLinux)
+    {
+        apt install -y firefox
+        return
+    }
+
+    $script:RememberToInstall += 'Firefox'
+}
+
+task Chrome {
+    if ($IsLinux)
+    {
+        $debFilePath = Join-Path $script:tmpdir 'chrome.deb'
+        Invoke-WebRequest -Uri 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' -OutFile $debFilePath
+        apt install $debFilePath
+    }
+
+    $script:RememberToInstall += 'Chrome'
+}
+
+task GitHubRepos {
+    if ($IsWindows)
+    {
+        $myGH = "https://github.com/rjmholt/{0}"
+        $psGH = "https://github.com/PowerShell/{0}"
+    }
+    else
+    {
+        $myGH = "git@github.com:rjmholt/{0}"
+        $psGH = "git@github.com:PowerShell/{0}"
+    }
+
+    $psRepos = @(
+        'PowerShell'
+        'vscode-PowerShell'
+        'PowerShellEditorServices'
+        'PSScriptAnalyzer'
+        'EditorSyntax'
+        'PowerShell-RFC'
+        'PowerShell-Docs'
+        'PSReadLine'
+    )
+
+    if ($global:psRepos)
+    {
+        $psRepos += $global:psRepos
+    }
+
+    $psRepoDetails = $psRepos | ForEach-Object { [GitHubRepo]@{ Name = $_; Origin = ($myGH -f $_); Upstream = ($psGH -f $_ } }
+
+    $myRepos = @(
+        'ModuleAnalyzer'
+        'system-setup'
+    )
+
+    $myRepoDetails = $myRepos | ForEach-Object { [GitHubRepo]@{ Name = $_; Origin = ($myGH -f $_) } }
+
+    $repos = @{
+        $HOME = @{
+            Documents = @{
+                Dev = @{
+                    Microsoft = $psRepoDetails
+                    Projects = $myRepos
+                    sandbox = @()
+                }
+            }
+        }
+    }
+
+    foreach ($baseDir in $repos.get_Keys())
+    {
+        Restore-GitHubRepos -DirStructure $repos[$baseDir] -BaseDir $baseDir
     }
 }
 
-task . PowerShellModules,Dotnet,VSCode,Vim,Telegram
+task LinuxPackages -If { $IsLinux } {
+    $packages = @(
+        'build-essential'
+        'python3'
+        'ipython3'
+        'haskell-platform'
+        'ocaml'
+    )
+
+    $pkgStr = $packages -join ' '
+
+    apt update
+    apt install $pkgStr
+}
+
+task Rust -If { $IsLinux } {
+    bash -c 'curl https://sh.rustup.rs -sSf | sh'
+}
+
+task RememberToInstall -If { $script:RememberToInstall } {
+    Write-Host "`n`nRemember to install the following programs:`n"
+    foreach ($p in $script:RememberToInstall)
+    {
+        Write-Host "`t- $p"
+    }
+}
+
+task . PowerShellModules,PowerShellProfile,Dotnet,Rust,VSCode,Vim,Firefox,Chrome,Telegram,Spotify,RememberToInstall
