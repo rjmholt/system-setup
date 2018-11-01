@@ -243,7 +243,7 @@ task GitHubRepos {
         $psRepos += $global:psRepos
     }
 
-    $psRepoDetails = $psRepos | ForEach-Object { [GitHubRepo]@{ Name = $_; Origin = ($myGH -f $_); Upstream = ($psGH -f $_ } }
+    $psRepoDetails = $psRepos | ForEach-Object { [GitHubRepo]@{ Name = $_; Origin = ($myGH -f $_); Upstream = ($psGH -f $_) } }
 
     $myRepos = @(
         'ModuleAnalyzer'
