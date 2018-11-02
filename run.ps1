@@ -1,3 +1,6 @@
+# Allow running the install script
+Set-ExecutionPolicy RemoteSigned -Force
+
 # Install PowerShell Core
 $tmpdir = [System.IO.Path]::GetTempPath()
 $installScript = [System.IO.Path]::Combine($tmpdir, 'install-powershell.ps1')
@@ -6,7 +9,7 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/PowerShell/
 
 # Update the path to include pwsh
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
-pwsh -Command "Set-ExecutionPolicy RemoteSigned"
+pwsh -Command "Set-ExecutionPolicy RemoteSigned -Force"
 
 $preBuildPath = [System.IO.Path]::Combine($tmpdir, 'prebuild.ps1')
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/rjmholt/system-setup/master/prebuild.ps1' -OutFile $preBuildPath
