@@ -314,10 +314,8 @@ task LinuxPackages -If { $IsLinux } {
         'ocaml'
     )
 
-    $pkgStr = $packages -join ' '
-
     apt update
-    apt install $pkgStr
+    apt install $packages
 }
 
 task Rust -If { $IsLinux } {
