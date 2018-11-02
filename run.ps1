@@ -5,7 +5,7 @@ Set-ExecutionPolicy RemoteSigned -Force
 $tmpdir = [System.IO.Path]::GetTempPath()
 $installScript = [System.IO.Path]::Combine($tmpdir, 'install-powershell.ps1')
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1' -OutFile $installScript
-& $installScript
+& $installScript -Destination "${env:ProgramFiles}\PowerShell\6" -AddToPath
 
 # Update the path to include pwsh
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
