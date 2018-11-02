@@ -335,4 +335,4 @@ task RememberToInstall -If { $script:RememberToInstall } {
     Write-Host "`n"
 }
 
-task . PowerShellModules,PowerShellProfile,Dotnet,Rust,VSCode,Vim,Firefox,Chrome,Telegram,Spotify,RememberToInstall
+task . PowerShellModules,PowerShellProfile,Dotnet,Rust,VSCode,Vim,LinuxPackages,Firefox,Chrome,Telegram,Spotify,RememberToInstall

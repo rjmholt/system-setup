@@ -13,7 +13,7 @@ fi
 
 if ! [ -e ~/.ssh/id_*.pub ]
 then
-    echo "You need to set up your ssh key and run this script again" > &2
+    echo "You need to set up your ssh key and run this script again" >&2
     exit 1
 fi
 

@@ -1,7 +1,7 @@
 ## Ubuntu/macOS
 
 ```sh
-curl -O https://raw.githubusercontent.com/rjmholt/system-setup/master/run.sh && sudo bash ./run.sh
+curl -sL https://raw.githubusercontent.com/rjmholt/system-setup/master/run.sh | sudo -E bash -
 ```
 
 ## Windows
