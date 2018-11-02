@@ -156,7 +156,7 @@ task VSCode {
     }
 
     $installVSCodePath = Join-Path $script:tmpdir 'Install-VSCode.ps1'
-    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/vscode-powershell/5a429aff4bb212c003834478cf2a740b57af7f3a/scripts/Install-VSCode.ps1' -OutFile $installVSCodePath
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/vscode-powershell/4936994291fa39d93f29bf1b2670aaf2d06a49f0/scripts/Install-VSCode.ps1' -OutFile $installVSCodePath
     & $installVSCodePath -BuildEdition 'Insider-System' -AdditionalExtensions $extensions
 }
 
