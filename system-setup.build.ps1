@@ -141,12 +141,17 @@ task VSCode {
         'eg2.tslint'
         'jchannon.csharpextensions'
         'k--kato.docomment'
-        'ms-vscode.azure-account'
         'ms-vscode.csharp'
         'vscodevim.vim'
     )
 
     if (-not $IsWindows)
+    {
+        $extensions += @(
+            'ms-vscode.azure-account'
+        )
+    }
+    else
     {
         $extensions += @(
             'justusadam.language-haskell'
@@ -203,6 +208,14 @@ task Telegram {
         return
     }
 
+    if ($IsWindows)
+    {
+        $telegramInstaller = Join-Path $script:tmpdir 'telegram-installer.exe'
+        Invoke-WebRequest -Uri 'https://updates.tdesktop.com/tsetup/tsetup.1.4.3.exe' -OutFile $telegramInstaller
+        Start-Process -Wait $telegramInstaller -ArgumentList '/silent'
+        return
+    }
+
     $script:RememberToInstall += 'Telegram'
 }
 
@@ -218,6 +231,14 @@ task Spotify {
         return
     }
 
+    if ($IsWindows)
+    {
+        $spotInstallerPath = Join-Path $script:tmpdir 'SpotifySetup.exe'
+        Invoke-WebRequest -Uri 'https://download.scdn.co/SpotifySetup.exe' -OutFile $spotInstallerPath
+        Start-Process -Wait $spotInstallerPath -ArgumentList '/Silent'
+        return
+    }
+
     $script:RememberToInstall += 'Spotify'
 }
 
@@ -227,6 +248,14 @@ task Firefox {
     if ($IsLinux)
     {
         apt install -y firefox
+        return
+    }
+
+    if ($IsWindows)
+    {
+        $ffInstallerPath = Join-Path $script:tmpdir 'ffInstaller.exe'
+        Invoke-WebRequest -Uri 'https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US' -OutFile $ffInstallerPath
+        Start-Process -Wait $ffInstallerPath -ArgumentList '/DesktopShortcut=false'
         return
     }
 
@@ -241,6 +270,15 @@ task Chrome {
         $debFilePath = Join-Path $script:tmpdir 'chrome.deb'
         Invoke-WebRequest -Uri 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' -OutFile $debFilePath
         apt install $debFilePath
+        return
+    }
+
+    if ($IsWindows)
+    {
+        $chromiumInstallerPath = Join-Path $script:tmpdir 'install-chrome.exe'
+        Invoke-WebRequest -Uri 'https://github.com/henrypp/chromium/releases/download/v70.0.3538.77-r587811-win64/chromium-sync.exe' -OutFile $chromiumInstallerPath
+        Start-Process -Wait $chromiumInstallerPath
+        return
     }
 
     $script:RememberToInstall += 'Chrome'
