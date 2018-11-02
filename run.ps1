@@ -1,6 +1,6 @@
 # Install PowerShell Core
 $tmpdir = [System.IO.Path]::GetTempPath()
-$installScript = [System.IO.Path]::Combine($tmpdir, 'install-powershell.sh')
+$installScript = [System.IO.Path]::Combine($tmpdir, 'install-powershell.ps1')
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.ps1' -OutFile $installScript
 & $installScript
 
