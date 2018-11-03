@@ -318,7 +318,7 @@ task Vim Homebrew,LinuxPackages,Python,Node,Rust,Erlang,{
     else
     {
         $vimExeUri = 'https://github.com/vim/vim-win32-installer/releases/download/v8.1.0454/gvim_8.1.0454_x86-mui2.exe'
-        Install-FromWeb -Wait -Uri $vimExeUri -FileName 'install-vim.exe' -Arguments '/S'
+        Install-FromWeb -Exe -Wait -Uri $vimExeUri -FileName 'install-vim.exe' -Arguments '/S'
         Update-Path -NewPathElements "${env:ProgramFiles(x86)}\Vim\vim81"
     }
 
