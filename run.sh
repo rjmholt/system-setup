@@ -12,7 +12,7 @@ then
 fi
 
 # Install PowerShell Core
-bash <(wget -q https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
+bash <(wget -q -O - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
 
 # Find the temp dir on the platform
 for TEMP in "$TMPDIR" "$TMP" /var/tmp /tmp
