@@ -93,7 +93,8 @@ function Install-FromExe
 
     if ($RunAsUnelevated)
     {
-        Start-Process 'runas.exe' -ArgumentList "/trustlevel:0x20000 $ExePath $Arguments" -Wait:$Wait
+        $fullArgs = @('/trustlevel:0x20000',$ExePath)+$Arguments
+        Start-Process 'runas.exe' -ArgumentList $fullArgs -Wait:$Wait
         return
     }
 
@@ -133,7 +134,7 @@ function Install-FromPkg
         $Wait
     )
 
-    Start-Process 'installer' -ArgumentList "-pkg $PkgPath -target /" -Wait:$Wait
+    Start-Process 'installer' -ArgumentList '-pkg',$PkgPath,'-target','/' -Wait:$Wait
 }
 
 function Install-FromDmg
@@ -515,11 +516,33 @@ task Chrome {
 
     if ($IsWindows)
     {
-        Install-FromWeb -Exe -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -FileName 'chrome_installer.exe' -Arguments '/silent /install'
+        Install-FromWeb -Exe -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -FileName 'chrome_installer.exe' -Arguments '/silent','/install'
         return
     }
 
     $script:RememberToInstall += 'Chrome'
+}
+
+task Vlc {
+    Write-Section 'Installing VLC'
+
+    if ($IsLinux)
+    {
+        snap install vlc
+        return
+    }
+
+    if ($IsWindows)
+    {
+        Install-FromWeb -Exe -Uri 'https://get.videolan.org/vlc/3.0.4/win32/vlc-3.0.4-win32.exe' -FileName 'vlc-installer.exe' -Arguments '/S','/L=1033'
+        return
+    }
+}
+
+task Teams -If { $IsWindows } {
+    Write-Section 'Installing Teams'
+
+    Install-FromWeb -Exe -Uri 'https://statics.teams.microsoft.com/production-windows-x64/1.1.00.29068/Teams_windows_x64.exe' -FileName 'teams-install.exe' -Arguments '/s'
 }
 
 task GitHubRepos {
