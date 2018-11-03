@@ -91,7 +91,7 @@ function Install-FromMsi
         $Wait
     )
 
-    Start-Process 'msiexec.exe' -Wait:$Wait -ArgumentList "/qn /i $MsiPath"
+    Start-Process 'msiexec.exe' -Wait:$Wait -ArgumentList '/i',$MsiPath,'/qn','/norestart'
 }
 
 function Install-FromPkg
