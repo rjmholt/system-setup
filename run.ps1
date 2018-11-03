@@ -7,7 +7,7 @@ Set-ExecutionPolicy RemoteSigned -Force
 # Install PowerShell Core
 $tmpdir = [System.IO.Path]::GetTempPath()
 $msiPath = [System.IO.Path]::Combine($tmpdir, 'install-powershell.msi')
-Invoke-WebRequest -Uri 'https://github.com/PowerShell/PowerShell/releases/download/v6.2.0-preview.1/PowerShell-6.2.0-preview.1-win-x64.msi' -OutFile $msiPath
+Invoke-WebRequest -Uri 'https://github.com/PowerShell/PowerShell/releases/download/v6.1.0/PowerShell-6.1.0-win-x64.msi' -OutFile $msiPath
 Start-Process -Wait 'msiexec.exe' -ArgumentList  '/i',$msiPath,'/qn','/norestart'
 
 # Update the path to include pwsh
