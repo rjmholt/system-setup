@@ -27,6 +27,190 @@ function Update-Path
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
 }
 
+function Restore-WebFileToTemp
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Uri,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FileName
+    )
+
+    $path = Join-Path $script:tmpdir $FileName
+    $null = Invoke-WebRequest -Uri $Uri -OutFile $path
+    return $path
+}
+
+function Install-FromExe
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $ExePath,
+
+        [Parameter()]
+        [string[]]
+        $Arguments,
+
+        [Parameter()]
+        [switch]
+        $Wait,
+
+        [Parameter()]
+        [switch]
+        $RunAsUnelevated
+    )
+
+    if ($RunAsUnelevated)
+    {
+        Start-Process 'runas.exe' -ArgumentList "/trustlevel:0x20000 $ExePath $Arguments" -Wait:$Wait
+        return
+    }
+
+    if ($Arguments)
+    {
+        Start-Process $ExePath -Wait:$Wait -ArgumentList $Arguments
+        return
+    }
+
+    Start-Process $ExePath -Wait:$Wait
+}
+
+function Install-FromMsi
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $MsiPath,
+
+        [Parameter()]
+        [switch]
+        $Wait
+    )
+
+    Start-Process 'msiexec.exe' -Wait:$Wait -ArgumentList "/qn /i $MsiPath"
+}
+
+function Install-FromPkg
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $PkgPath,
+
+        [Parameter()]
+        [switch]
+        $Wait
+    )
+
+    Start-Process 'installer' -ArgumentList "-pkg $PkgPath -target /" -Wait:$Wait
+}
+
+function Install-FromDmg
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $DmgPath,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $VolumeName,
+
+        [Parameter(Mandatory=$true)]
+        [ValidatePattern('*\.app$')]
+        $AppName
+    )
+
+    Start-Process -Wait 'hdiutil' -ArgumentList "attach $DmgPath"
+
+    $appDmgPath = Join-Path '/Volumes' $VolumeName $AppName
+
+    $appDestination = Join-Path '/Applications' $AppName
+
+    Copy-Item -LiteralPath $appDmgPath -Destination $appDestination
+}
+
+function Install-FromWeb
+{
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]
+        $Uri,
+
+        [Parameter(Mandatory=$true)]
+        [string]
+        $FileName,
+
+        [Parameter()]
+        [switch]
+        $Wait,
+
+        [Parameter(ParameterSetName='Exe')]
+        [switch]
+        $Exe,
+
+        [Parameter(ParameterSetName='Msi')]
+        [switch]
+        $Msi,
+
+        [Parameter(ParameterSetName='Pkg')]
+        [switch]
+        $Pkg,
+
+        [Parameter(ParameterSetName='Dmg')]
+        [switch]
+        $Dmg,
+
+        [Parameter(ParameterSetName='Exe')]
+        [string[]]
+        $Arguments,
+
+        [Parameter(ParameterSetName='Exe')]
+        [switch]
+        $Unelevated,
+
+        [Parameter(ParameterSetName='Dmg', Mandatory=$true)]
+        [string]
+        $VolumeName,
+
+        [Parameter(ParameterSetName='Dmg', Mandatory=$true)]
+        [string]
+        $AppName
+    )
+
+    $installerPath = Restore-WebFileToTemp -Uri $Uri -FileName $FileName
+
+    if ($Msi)
+    {
+        Install-FromMsi -MsiPath $installerPath -Wait:$Wait
+        return
+    }
+
+    if ($Pkg)
+    {
+        Install-FromPkg -PkgPath $installerPath -Wait:$Wait
+        return
+    }
+
+    if ($Exe)
+    {
+        Install-FromExe -ExePath $installerPath -Arguments $Arguments -Wait:$Wait -RunAsUnelevated:$Unelevated
+        return
+    }
+
+    if ($Dmg)
+    {
+        Install-FromDmg -DmgPath $installerPath -VolumeName $VolumeName -AppName $AppName
+        return
+    }
+
+    throw 'File format not specified'
+}
+
 function Restore-GitHubRepos
 {
     param(
@@ -77,8 +261,7 @@ function Restore-GitHubRepos
 task Homebrew -If { $IsMacOS } {
     Write-Section 'Installing Homebrew'
 
-    $homebrewInstallPath = Join-Path $script:tmpdir 'install-homebrew.rb'
-    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Homebrew/install/master/install' -OutFile $homebrewInstallPath
+    $homebrewInstallPath = Restore-WebFileToTemp -FileName 'install-homebrew.rb' -Uri 'https://raw.githubusercontent.com/Homebrew/install/master/install'
     /usr/bin/ruby $homebrewInstallPath
 }
 
@@ -107,9 +290,8 @@ task Vim Homebrew,LinuxPackages,Python,Node,Rust,Erlang,{
     }
     else
     {
-        $vimExePath = Join-Path $script:tmpdir 'install-vim.exe'
-        Invoke-WebRequest -Uri 'https://github.com/vim/vim-win32-installer/releases/download/v8.1.0454/gvim_8.1.0454_x86-mui2.exe' -OutFile $vimExePath
-        Start-Process -Wait $vimExePath -ArgumentList '/S'
+        $vimExeUri = 'https://github.com/vim/vim-win32-installer/releases/download/v8.1.0454/gvim_8.1.0454_x86-mui2.exe'
+        Install-FromWeb -Uri $vimExeUri -FileName 'install-vim.exe' -Wait -Arguments '/S'
     }
 
     Update-Path
@@ -136,14 +318,12 @@ task Dotnet {
     }
     elseif ($IsMacOS)
     {
-        $dotNetInstallerPath = Join-Path $script:tmpdir 'dotnetInstaller.pkg'
-        Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/38102737-cb48-46c2-8f52-fb7102b50ae7/d81958d71c3c2679796e1ecfbd9cc903/dotnet-sdk-2.1.403-osx-x64.pkg' -OutFile $dotNetInstallerPath
-        installer -pkg $dotNetInstallerPath -target /
+        $dotnetUri = 'https://download.visualstudio.microsoft.com/download/pr/38102737-cb48-46c2-8f52-fb7102b50ae7/d81958d71c3c2679796e1ecfbd9cc903/dotnet-sdk-2.1.403-osx-x64.pkg'
+        Install-FromWeb -Uri $dotnetUri -FileName 'dotnetInstaller.pkg' -Pkg -Wait
     }
     else
     {
-        $dotnetInstallerPath = Join-Path $script:tmpdir 'install-dotnet.ps1'
-        Invoke-WebRequest -Uri 'https://dot.net/v1/dotnet-install.ps1' -OutFile $dotNetInstallerPath
+        $dotnetInstallerPath = Restore-WebFileToTemp -FileName 'install-dotnet.ps1' -Uri 'https://dot.net/v1/dotnet-install.ps1'
         & $dotNetInstallerPath
     }
 }
@@ -179,8 +359,7 @@ task VSCode {
         )
     }
 
-    $installVSCodePath = Join-Path $script:tmpdir 'Install-VSCode.ps1'
-    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/PowerShell/vscode-powershell/4936994291fa39d93f29bf1b2670aaf2d06a49f0/scripts/Install-VSCode.ps1' -OutFile $installVSCodePath
+    $installVSCodePath = Restore-WebFileToTemp -FileName 'Install-VSCode.ps1' -Uri 'https://raw.githubusercontent.com/PowerShell/vscode-powershell/4936994291fa39d93f29bf1b2670aaf2d06a49f0/scripts/Install-VSCode.ps1'
     & $installVSCodePath -BuildEdition 'Insider-System' -AdditionalExtensions $extensions
 }
 
@@ -218,10 +397,9 @@ task Telegram {
 
     if ($IsLinux)
     {
-        $telegramDl = Join-Path $script:tmpdir 'telegram.tar.xz'
-        Invoke-WebRequest -Uri 'https://telegram.org/dl/desktop/linux' -OutFile $telegramDl
+        $telegramPath = Restore-WebFileToTemp -FileName 'telegram.tar.xz' -Uri 'https://telegram.org/dl/desktop/linux'
         Push-Location $script:tmpdir
-        tar xvf $telegramDl
+        tar xvf $telegramPath
         mv ./Telegram /opt/
         Pop-Location
         return
@@ -229,9 +407,7 @@ task Telegram {
 
     if ($IsWindows)
     {
-        $telegramInstaller = Join-Path $script:tmpdir 'telegram-installer.exe'
-        Invoke-WebRequest -Uri 'https://updates.tdesktop.com/tsetup/tsetup.1.4.3.exe' -OutFile $telegramInstaller
-        Start-Process -Wait $telegramInstaller -ArgumentList '/silent'
+        Install-FromWeb -Exe -Uri 'https://updates.tdesktop.com/tsetup/tsetup.1.4.3.exe' -FileName 'telegram-installer.exe' -Arguments '/silent'
         return
     }
 
@@ -252,9 +428,7 @@ task Spotify {
 
     if ($IsWindows)
     {
-        $spotInstallerPath = Join-Path $script:tmpdir 'SpotifySetup.exe'
-        Invoke-WebRequest -Uri 'https://download.scdn.co/SpotifySetup.exe' -OutFile $spotInstallerPath
-        Start-Process -Wait 'runas.exe' -ArgumentList "/trustlevel:0x20000 '$spotInstallerPath /silent'"
+        Install-FromWeb -Exe -Uri 'https://download.scdn.co/SpotifySetup.exe' -FileName 'SpotifySetup.exe' -Arguments '/silent' -Unelevated
         return
     }
 
@@ -272,9 +446,7 @@ task Firefox {
 
     if ($IsWindows)
     {
-        $ffInstallerPath = Join-Path $script:tmpdir 'ffInstaller.exe'
-        Invoke-WebRequest -Uri 'https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US' -OutFile $ffInstallerPath
-        Start-Process -Wait $ffInstallerPath -ArgumentList '/DesktopShortcut=false'
+        Install-FromWeb -Exe -FileName 'ffInstaller.exe' -Uri 'https://download.mozilla.org/?product=firefox-latest-ssl&os=win64&lang=en-US' -Arguments '/DesktopShortcut=false'
         return
     }
 
@@ -294,9 +466,7 @@ task Chrome {
 
     if ($IsWindows)
     {
-        $chromiumInstallerPath = Join-Path $script:tmpdir 'install-chrome.exe'
-        Invoke-WebRequest -Uri 'https://github.com/henrypp/chromium/releases/download/v70.0.3538.77-r587811-win64/chromium-sync.exe' -OutFile $chromiumInstallerPath
-        Start-Process $chromiumInstallerPath -ArgumentList '/silent'
+        Install-FromWeb -Msi -Uri 'https://cloud.google.com/chrome-enterprise/browser/download/thankyou?platform=WIN64_MSI&channel=stable&usagestats=0#' -FileName 'install-chrome.msi'
         return
     }
 
@@ -391,9 +561,7 @@ task Node {
     }
     elseif ($IsWindows)
     {
-        $nodeInstallerPath = Join-Path $script:tmpdir 'install-node.msi'
-        Invoke-WebRequest -Uri 'https://nodejs.org/dist/v10.13.0/node-v10.13.0-x86.msi' -OutFile $nodeInstallerPath
-        Start-Process 'msiexec.exe' -Wait -ArgumentList "/qn /i $nodeInstallerPath"
+        Install-FromWeb -Msi -FileName 'install-node.msi' -Uri 'https://nodejs.org/dist/v10.13.0/node-v10.13.0-x86.msi' -Wait
     }
 
     Update-Path
@@ -410,9 +578,7 @@ task Python {
 
     if ($IsWindows)
     {
-        $pythonInstallerPath = Join-Path $script:tmpdir 'install-python.exe'
-        Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.7.1/python-3.7.1-amd64.exe' -OutFile $pythonInstallerPath
-        Start-Process -Wait $pythonInstallerPath -ArgumentList '/quiet'
+        Install-FromWeb -Exe -FileName 'install-python.exe' -Uri 'https://www.python.org/ftp/python/3.7.1/python-3.7.1-amd64.exe' -Arguments '/quiet' -Wait
         return
     }
 }
