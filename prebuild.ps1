@@ -8,7 +8,7 @@ function Write-Section
         $Info
     )
 
-    Write-Host "`n`n--- $Info ---`n" -ForegroundColor Yellow
+    Write-Host "`n`n--- $Info ---`n"
 }
 
 function Update-Path

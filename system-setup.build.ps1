@@ -19,7 +19,12 @@ function Write-Section
         $Info
     )
 
-    Write-Host "`n`n--- $Info ---`n" -ForegroundColor Yellow
+    Write-Host "`n`n--- $Info ---`n"
+}
+
+function Update-Path
+{
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
 }
 
 function Restore-GitHubRepos
@@ -77,13 +82,13 @@ task Homebrew -If { $IsMacOS } {
     /usr/bin/ruby $homebrewInstallPath
 }
 
-task Vim Homebrew, {
+task Vim Homebrew,LinuxPackages,Python,Node,Rust,Erlang {
     Write-Section 'Installing vim'
 
     $vimrcLocation = if ($IsWindows) { '~/_vimrc' } else { '~/.vimrc' }
     $vimFolder = if ($IsWindows) { '~/vimfiles' } else { '~/.vim' }
 
-    $vimrcSrcPath = Join-Path $PSScriptRoot 'vimrc.vim'
+    $vimrcSrcPath = Join-Path $PSScriptRoot (if ($IsWindows) { 'vimrc.win.vim' } else { 'vimrc.unix.vim' })
 
     if ($IsLinux)
     {
@@ -100,10 +105,15 @@ task Vim Homebrew, {
         Start-Process -Wait $vimExePath -ArgumentList '/S'
     }
 
+    Update-Path
+
     Copy-Item -Path $vimrcSrcPath -Destination $vimrcLocation -Force
     New-Item -Path "$vimFolder/plugged" -ItemType Directory
     New-Item -Path "$vimFolder/autoload" -ItemType Directory
     Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim' -OutFile "$vimFolder/autoload/plug.vim"
+
+    # Run vim-plug installations
+    Start-Process 'vim' -ArgumentList '+PlugUpdate +qall'
 }
 
 task Dotnet {
@@ -145,7 +155,7 @@ task VSCode {
         'vscodevim.vim'
     )
 
-    if (-not $IsWindows)
+    if ($IsWindows)
     {
         $extensions += @(
             'ms-vscode.azure-account'
@@ -157,6 +167,8 @@ task VSCode {
             'justusadam.language-haskell'
             'alanz.vscode-hie-server'
             'rust-lang.rust'
+            'pgourlain.erlang'
+            'freebroccolo.reasonml'
         )
     }
 
@@ -277,7 +289,7 @@ task Chrome {
     {
         $chromiumInstallerPath = Join-Path $script:tmpdir 'install-chrome.exe'
         Invoke-WebRequest -Uri 'https://github.com/henrypp/chromium/releases/download/v70.0.3538.77-r587811-win64/chromium-sync.exe' -OutFile $chromiumInstallerPath
-        Start-Process -Wait $chromiumInstallerPath -ArgumentList '/silent'
+        Start-Process $chromiumInstallerPath -ArgumentList '/silent'
         return
     }
 
@@ -346,10 +358,11 @@ task LinuxPackages -If { $IsLinux } {
 
     $packages = @(
         'build-essential'
-        'python3'
-        'ipython3'
         'haskell-platform'
         'ocaml'
+        'opam'
+        'openjdk-8-jdk'
+        'openjdk-11-jdk'
     )
 
     apt update
@@ -362,6 +375,49 @@ task Rust -If { $IsLinux } {
     sudo -H -u $env:SUDO_USER bash -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
 }
 
+task Node {
+    Write-Section 'Installing node'
+
+    if ($IsLinux)
+    {
+        apt install nodejs npm
+    }
+    elseif ($IsWindows)
+    {
+        $nodeInstallerPath = Join-Path $script:tmpdir 'install-node.msi'
+        Invoke-WebRequest -Uri 'https://nodejs.org/dist/v10.13.0/node-v10.13.0-x86.msi' -OutFile $nodeInstallerPath
+        Start-Process 'msiexec.exe' -Wait -ArgumentList "/qn /i $nodeInstallerPath"
+    }
+
+    Update-Path
+
+    npm install -g typescript
+}
+
+task Python {
+    if ($IsLinux)
+    {
+        apt install python3 ipython3
+        return
+    }
+
+    if ($IsWindows)
+    {
+        $pythonInstallerPath = Join-Path $script:tmpdir 'install-python.exe'
+        Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.7.1/python-3.7.1-amd64.exe' -OutFile $pythonInstallerPath
+        Start-Process -Wait $pythonInstallerPath -ArgumentList '/quiet'
+        return
+    }
+}
+
+task Erlang -If { $IsLinux } {
+    $erlangDeb = Join-Path $script:tmpdir 'erlang.deb'
+    Invoke-WebRequest -Uri 'https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb' -OutFile $erlangDeb
+    dpkg -i $erlangDeb
+    apt update
+    apt install esl-erlang
+}
+
 task RememberToInstall -If { $script:RememberToInstall } {
     Write-Host "`n`nRemember to install the following programs:"
     foreach ($p in $script:RememberToInstall)
@@ -371,4 +427,19 @@ task RememberToInstall -If { $script:RememberToInstall } {
     Write-Host "`n"
 }
 
-task . PowerShellModules,PowerShellProfile,Dotnet,Rust,VSCode,Vim,LinuxPackages,Firefox,Chrome,Telegram,Spotify,RememberToInstall
+task . @(
+    PowerShellModules
+    PowerShellProfile
+    Dotnet
+    Node
+    Rust
+    LinuxPackages
+    Vim
+    VSCode
+    Firefox
+    Chrome
+    Telegram
+    Spotify
+    GitHubRepos
+    RememberToInstall
+)
