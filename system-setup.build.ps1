@@ -250,6 +250,11 @@ function Restore-GitHubRepos
         $BaseDir
     )
 
+    if ($BaseDir -and -not (Test-Path $BaseDir))
+    {
+        New-Item -ItemType Directory -Path $BaseDir
+    }
+
     if (-not $Item)
     {
         return
@@ -282,6 +287,16 @@ function Restore-GitHubRepos
             $dirPath = Join-Path $BaseDir $dir
             Restore-GitHubRepos -Item $Item[$dir] -BaseDir $dirPath
         }
+        return
+    }
+
+    if ($Item -is [array])
+    {
+        foreach ($i in $Item)
+        {
+            Restore-GitHubRepos -Item $i -BaseDir $dirPath
+        }
+        return
     }
 }
 
