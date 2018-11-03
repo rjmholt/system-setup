@@ -1,6 +1,9 @@
 # Allow running the install script
 Set-ExecutionPolicy RemoteSigned -Force
 
+# Make sure the TLS version works with github
+[Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+
 # Install PowerShell Core
 $tmpdir = [System.IO.Path]::GetTempPath()
 $msiPath = [System.IO.Path]::Combine($tmpdir, 'install-powershell.msi')
