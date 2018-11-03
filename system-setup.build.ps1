@@ -96,8 +96,8 @@ task Vim Homebrew, {
     else
     {
         $vimExePath = Join-Path $script:tmpdir 'install-vim.exe'
-        Invoke-WebRequest -Uri 'ftp://ftp.vim.org/pub/vim/pc/gvim81.exe' -OutFile $vimExePath
-        & $vimExePath /S
+        Invoke-WebRequest -Uri 'https://github.com/vim/vim-win32-installer/releases/download/v8.1.0454/gvim_8.1.0454_x86-mui2.exe' -OutFile $vimExePath
+        Start-Process -Wait $vimExePath -ArgumentList '/S'
     }
 
     Copy-Item -Path $vimrcSrcPath -Destination $vimrcLocation -Force
@@ -235,7 +235,7 @@ task Spotify {
     {
         $spotInstallerPath = Join-Path $script:tmpdir 'SpotifySetup.exe'
         Invoke-WebRequest -Uri 'https://download.scdn.co/SpotifySetup.exe' -OutFile $spotInstallerPath
-        Start-Process -Wait $spotInstallerPath -ArgumentList '/Silent'
+        Start-Process -Wait 'runas.exe' -ArgumentList "/trustlevel:0x20000 '$spotInstallerPath /silent'"
         return
     }
 
@@ -277,7 +277,7 @@ task Chrome {
     {
         $chromiumInstallerPath = Join-Path $script:tmpdir 'install-chrome.exe'
         Invoke-WebRequest -Uri 'https://github.com/henrypp/chromium/releases/download/v70.0.3538.77-r587811-win64/chromium-sync.exe' -OutFile $chromiumInstallerPath
-        Start-Process -Wait $chromiumInstallerPath
+        Start-Process -Wait $chromiumInstallerPath -ArgumentList '/silent'
         return
     }
 
@@ -328,7 +328,7 @@ task GitHubRepos {
             Documents = @{
                 Dev = @{
                     Microsoft = $psRepoDetails
-                    Projects = $myRepos
+                    Projects = $myRepoDetails
                     sandbox = @()
                 }
             }

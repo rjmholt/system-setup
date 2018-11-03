@@ -53,7 +53,7 @@ function Restore-SetupRepo
 {
     Write-Section "Cloning setup repo"
 
-    $setupPath = Join-Path $script:tmpdir 'setup-system'
+    $setupPath = Join-Path $script:tmpdir 'system-setup'
     git clone 'https://github.com/rjmholt/system-setup' $setupPath > $null
     return $setupPath
 }
