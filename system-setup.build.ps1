@@ -525,6 +525,16 @@ task Chrome {
 task GitHubRepos {
     Write-Section 'Setting up GitHub repos'
 
+    # Register key authenticity of GitHub
+    if (-not $IsWindows)
+    {
+        bash -c 'ssh-keyscan -H github.com >> ~/.ssh/known_hosts'
+    }
+
+    # Setup git profile
+    git config --global user.name 'Robert Holt'
+    git config --global user.email 'rjmholt_msft@outlook.com'
+
     if ($IsWindows)
     {
         $myGH = "https://github.com/rjmholt/{0}"
