@@ -515,7 +515,7 @@ task Chrome {
 
     if ($IsWindows)
     {
-        Install-FromWeb -Msi -Uri 'https://cloud.google.com/chrome-enterprise/browser/download/thankyou?platform=WIN64_MSI&channel=stable&usagestats=0#' -FileName 'install-chrome.msi'
+        Install-FromWeb -Exe -Uri 'https://dl.google.com/chrome/install/latest/chrome_installer.exe' -FileName 'chrome_installer.exe' -Arguments '/silent /install'
         return
     }
 
