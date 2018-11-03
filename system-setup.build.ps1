@@ -544,7 +544,6 @@ task GitHubRepos {
         'EditorSyntax'
         'PowerShell-RFC'
         'PowerShell-Docs'
-        'PSReadLine'
     )
 
     if ($global:psRepos)
