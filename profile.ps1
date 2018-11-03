@@ -9,7 +9,7 @@ if ($IsWindows -or $PSVersionTable.PSVersion.Major -lt 6)
     $env:PATH += ';Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.7.1 Tools'
 
     # Put vim on the path
-    $env:PATH += ';Program Files (x86)\Vim\vim81'
+    $env:PATH += ';Program Files\Vim\vim81'
 }
 
 Import-Module posh-git
