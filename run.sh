@@ -11,7 +11,7 @@ then
     exit 1
 fi
 
-if [ -n ~/.ssh/known_hosts ] || [ -s ~/.ssh/known_hosts ]
+if [ -n ~/.ssh/known_hosts ]
 then
     echo "Add github to the known hosts with 'ssh git@github.com'" >&2
     exit 1
