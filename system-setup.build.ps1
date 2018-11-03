@@ -276,6 +276,16 @@ function Restore-GitHubRepos
                     git remote add upstream $Item.Upstream
                 }
                 git fetch --all
+
+                # Switch from HTTPS to SSH now that the repos are cloned
+                if (-not $IsWindows)
+                {
+                    git remote set-url origin "git@github.com:rjmholt/$($Item.Name)"
+                    if ($Item.Upstream)
+                    {
+                        git remote set-url upstream "git@github.com:PowerShell/$($Item.Name)"
+                    }
+                }
             }
             finally
             {
@@ -552,16 +562,8 @@ task GitHubRepos {
     git config --global user.name 'Robert Holt'
     git config --global user.email 'rjmholt_msft@outlook.com'
 
-    if ($IsWindows)
-    {
-        $myGH = "https://github.com/rjmholt/{0}"
-        $psGH = "https://github.com/PowerShell/{0}"
-    }
-    else
-    {
-        $myGH = "git@github.com:rjmholt/{0}"
-        $psGH = "git@github.com:PowerShell/{0}"
-    }
+    $myGH = "https://github.com/rjmholt/{0}"
+    $psGH = "https://github.com/PowerShell/{0}"
 
     $psRepos = @(
         'PowerShell'
