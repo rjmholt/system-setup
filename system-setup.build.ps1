@@ -250,6 +250,11 @@ function Restore-GitHubRepos
         $BaseDir
     )
 
+    if ($BaseDir -and -not (Test-Path $BaseDir))
+    {
+        New-Item -ItemType Directory -Path $BaseDir
+    }
+
     if (-not $Item)
     {
         return
@@ -257,16 +262,24 @@ function Restore-GitHubRepos
 
     if ($Item -is [GitHubRepo])
     {
-        $repoPath = Join-Path $BaseDir $Item.Name
-        git clone --recursive $Item.Origin
-        Push-Location $repoPath
+        Push-Location $BaseDir
         try
         {
-            if ($Item.Upstream)
+            git clone --recursive $Item.Origin
+            $repoPath = Join-Path $BaseDir $Item.Name
+            Push-Location $repoPath
+            try
             {
-                git remote add upstream $Item.Upstream
+                if ($Item.Upstream)
+                {
+                    git remote add upstream $Item.Upstream
+                }
+                git fetch --all
             }
-            git fetch --all
+            finally
+            {
+                Pop-Location
+            }
         }
         finally
         {
@@ -282,6 +295,16 @@ function Restore-GitHubRepos
             $dirPath = Join-Path $BaseDir $dir
             Restore-GitHubRepos -Item $Item[$dir] -BaseDir $dirPath
         }
+        return
+    }
+
+    if ($Item -is [array])
+    {
+        foreach ($i in $Item)
+        {
+            Restore-GitHubRepos -Item $i -BaseDir $dirPath
+        }
+        return
     }
 }
 
