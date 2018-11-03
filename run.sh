@@ -11,6 +11,9 @@ then
     exit 1
 fi
 
+# Register the authenticity of GitHub
+ssh-keyscan >> ~/.ssh/known_hosts
+
 # Install PowerShell Core
 bash <(wget -q -O - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
 

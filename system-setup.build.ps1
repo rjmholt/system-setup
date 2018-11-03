@@ -548,12 +548,6 @@ task Teams -If { $IsWindows } {
 task GitHubRepos {
     Write-Section 'Setting up GitHub repos'
 
-    # Register key authenticity of GitHub
-    if (-not $IsWindows)
-    {
-        bash -c 'ssh-keyscan -H github.com >> ~/.ssh/known_hosts'
-    }
-
     # Setup git profile
     git config --global user.name 'Robert Holt'
     git config --global user.email 'rjmholt_msft@outlook.com'
@@ -617,8 +611,6 @@ task LinuxPackages -If { $IsLinux } {
     $packages = @(
         'build-essential'
         'haskell-platform'
-        'ocaml'
-        'opam'
         'openjdk-8-jdk'
         'openjdk-11-jdk'
     )
@@ -631,6 +623,14 @@ task Rust -If { $IsLinux } {
     Write-Section 'Installing Rust'
 
     sudo -H -u $env:SUDO_USER bash -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
+}
+
+task OCaml -If { $IsLinux } {
+
+    apt update -y
+    apt install -y ocaml opam
+
+    opam install utop merlin
 }
 
 task Node {
@@ -685,6 +685,8 @@ task . @(
     'Dotnet'
     'Node'
     'Rust'
+    'OCaml'
+    'Erlang'
     'LinuxPackages'
     'Vim'
     'VSCode'
@@ -692,6 +694,8 @@ task . @(
     'Chrome'
     'Telegram'
     'Spotify'
+    'Vlc'
+    'Teams'
     'GitHubRepos'
     'PowerShellModules'
     'PowerShellProfile'
