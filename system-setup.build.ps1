@@ -552,7 +552,7 @@ task GitHubRepos {
 
     foreach ($baseDir in $repos.get_Keys())
     {
-        Restore-GitHubRepos -DirStructure $repos[$baseDir] -BaseDir $baseDir
+        Restore-GitHubRepos -Item $repos[$baseDir] -BaseDir $baseDir
     }
 }
 
