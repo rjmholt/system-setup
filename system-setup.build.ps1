@@ -534,7 +534,7 @@ task Vlc {
 
     if ($IsWindows)
     {
-        Install-FromWeb -Exe -Uri 'https://get.videolan.org/vlc/3.0.4/win32/vlc-3.0.4-win32.exe' -FileName 'vlc-installer.exe' -Arguments '/S','/L=1033'
+        Install-FromWeb -Msi -Uri 'http://www.gtlib.gatech.edu/pub/videolan/vlc/last/win64/vlc-3.0.4-win64.msi' -FileName 'vlc-installer.msi'
         return
     }
 }
