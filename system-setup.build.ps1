@@ -24,7 +24,34 @@ function Write-Section
 
 function Update-Path
 {
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") 
+    param(
+        [Parameter()]
+        [string[]]
+        $NewPathElements,
+
+        [Parameter()]
+        [switch]
+        $AddToEnd
+    )
+
+    $elems = @(
+        [System.Environment]::GetEnvironmentVariable("Path","Machine") 
+        [System.Environment]::GetEnvironmentVariable("Path","User") 
+    )
+
+    if ($NewPathElements)
+    {
+        if ($AddToEnd)
+        {
+            $elems += $NewPathElements
+        }
+        else
+        {
+            $elems = $NewPathElements + $elems
+        }
+    }
+
+    $env:Path = $elems -join [System.IO.Path]::PathSeparator
 }
 
 function Restore-WebFileToTemp
@@ -291,10 +318,9 @@ task Vim Homebrew,LinuxPackages,Python,Node,Rust,Erlang,{
     else
     {
         $vimExeUri = 'https://github.com/vim/vim-win32-installer/releases/download/v8.1.0454/gvim_8.1.0454_x86-mui2.exe'
-        Install-FromWeb -Uri $vimExeUri -FileName 'install-vim.exe' -Wait -Arguments '/S'
+        Install-FromWeb -Wait -Uri $vimExeUri -FileName 'install-vim.exe' -Arguments '/S'
+        Update-Path -NewPathElements "${env:ProgramFiles(x86)}\Vim\vim81"
     }
-
-    Update-Path
 
     Copy-Item -Path $vimrcSrcPath -Destination $vimrcLocation -Force
     New-Item -Path "$vimFolder/plugged" -ItemType Directory
