@@ -82,13 +82,20 @@ task Homebrew -If { $IsMacOS } {
     /usr/bin/ruby $homebrewInstallPath
 }
 
-task Vim Homebrew,LinuxPackages,Python,Node,Rust,Erlang {
+task Vim Homebrew,LinuxPackages,Python,Node,Rust,Erlang,{
     Write-Section 'Installing vim'
 
     $vimrcLocation = if ($IsWindows) { '~/_vimrc' } else { '~/.vimrc' }
     $vimFolder = if ($IsWindows) { '~/vimfiles' } else { '~/.vim' }
 
-    $vimrcSrcPath = Join-Path $PSScriptRoot (if ($IsWindows) { 'vimrc.win.vim' } else { 'vimrc.unix.vim' })
+    if ($IsWindows)
+    {
+        $vimrcSrcPath = Join-Path $PSScriptRoot 'vimrc.win.vim'
+    }
+    else
+    {
+        $vimrcSrcPath = Join-Path $PSScriptRoot 'vimrc.unix.vim'
+    }
 
     if ($IsLinux)
     {
@@ -428,18 +435,18 @@ task RememberToInstall -If { $script:RememberToInstall } {
 }
 
 task . @(
-    PowerShellModules
-    PowerShellProfile
-    Dotnet
-    Node
-    Rust
-    LinuxPackages
-    Vim
-    VSCode
-    Firefox
-    Chrome
-    Telegram
-    Spotify
-    GitHubRepos
-    RememberToInstall
+    'PowerShellModules'
+    'PowerShellProfile'
+    'Dotnet'
+    'Node'
+    'Rust'
+    'LinuxPackages'
+    'Vim'
+    'VSCode'
+    'Firefox'
+    'Chrome'
+    'Telegram'
+    'Spotify'
+    'GitHubRepos'
+    'RememberToInstall'
 )
