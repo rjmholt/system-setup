@@ -1,7 +1,7 @@
 ## Ubuntu/macOS
 
 ```sh
-wget -q -O https://raw.githubusercontent.com/rjmholt/system-setup/master/run.sh | sudo -E bash -
+wget -q -O - https://raw.githubusercontent.com/rjmholt/system-setup/master/run.sh | sudo -E bash -
 ```
 
 ## Windows
