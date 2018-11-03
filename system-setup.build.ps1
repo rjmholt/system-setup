@@ -649,8 +649,6 @@ task RememberToInstall -If { $script:RememberToInstall } {
 }
 
 task . @(
-    'PowerShellModules'
-    'PowerShellProfile'
     'Dotnet'
     'Node'
     'Rust'
@@ -662,5 +660,7 @@ task . @(
     'Telegram'
     'Spotify'
     'GitHubRepos'
+    'PowerShellModules'
+    'PowerShellProfile'
     'RememberToInstall'
 )
