@@ -11,8 +11,11 @@ then
     exit 1
 fi
 
-# Register the authenticity of GitHub
-ssh-keyscan github.com 2>/dev/null >> ~/.ssh/known_hosts
+if [ -s ~/.ssh/known_hosts ]
+then
+    echo "Add github to the known hosts with 'ssh git@github.com'" >&2
+    exit 1
+fi
 
 # Install PowerShell Core
 bash <(wget -q -O - https://raw.githubusercontent.com/PowerShell/PowerShell/master/tools/install-powershell.sh)
