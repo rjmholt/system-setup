@@ -509,7 +509,7 @@ task Chrome {
     {
         $debFilePath = Join-Path $script:tmpdir 'chrome.deb'
         Invoke-WebRequest -Uri 'https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb' -OutFile $debFilePath
-        apt install $debFilePath
+        apt install -y $debFilePath
         return
     }
 
@@ -590,8 +590,8 @@ task LinuxPackages -If { $IsLinux } {
         'openjdk-11-jdk'
     )
 
-    apt update
-    apt install $packages
+    apt update -y
+    apt install -y $packages
 }
 
 task Rust -If { $IsLinux } {
@@ -605,7 +605,7 @@ task Node {
 
     if ($IsLinux)
     {
-        apt install nodejs npm
+        apt install -y nodejs npm
     }
     elseif ($IsWindows)
     {
@@ -620,7 +620,7 @@ task Node {
 task Python {
     if ($IsLinux)
     {
-        apt install python3 ipython3
+        apt install -y python3 ipython3
         return
     }
 
@@ -635,8 +635,8 @@ task Erlang -If { $IsLinux } {
     $erlangDeb = Join-Path $script:tmpdir 'erlang.deb'
     Invoke-WebRequest -Uri 'https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb' -OutFile $erlangDeb
     dpkg -i $erlangDeb
-    apt update
-    apt install esl-erlang
+    apt update -y
+    apt install -y esl-erlang
 }
 
 task RememberToInstall -If { $script:RememberToInstall } {
