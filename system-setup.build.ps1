@@ -555,6 +555,12 @@ task Teams -If { $IsWindows } {
     Install-FromWeb -Exe -Uri 'https://statics.teams.microsoft.com/production-windows-x64/1.1.00.29068/Teams_windows_x64.exe' -FileName 'teams-install.exe' -Arguments '/s'
 }
 
+task Slack -If { $IsWindows } {
+    Write-Section 'Installing Slack'
+
+    Install-FromWeb -Msi -Uri 'http://slack.com/ssb/download-win64-msi-legacy' -FileName 'SlackSetup.msi'
+}
+
 task GitHubRepos {
     Write-Section 'Setting up GitHub repos'
 
@@ -700,6 +706,7 @@ task . @(
     'Spotify'
     'Vlc'
     'Teams'
+    'Slack'
     'GitHubRepos'
     'RememberToInstall'
 )
